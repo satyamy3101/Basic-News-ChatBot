@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Chatbot</title>
+</head>
+<body>
+  <h1 style="background-color: lightblue; text-align: center;">News Chatbot</h1>
+  <div id="chat-container" style="display: block;">
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+  <div id="news-container"></div>
+
+  <script>
+    function sendMessage() {
+        const user_input = document.getElementById('user-input').value;
+        document.getElementById('chat-box').innerHTML += `<p>You: ${user_input}</p>`;
+        document.getElementById('user-input').value = '';
+
+        // Send user input to server
+        fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `user_input=${user_input}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            const chatbot_response = data.response;
+            const chatbotResponseElement = document.createElement('p');
+            chatbotResponseElement.innerHTML = `Chatbot: ${chatbot_response}`;
+            chatbotResponseElement.style.backgroundColor = 'lightgreen';
+            document.getElementById('chat-box').appendChild(chatbotResponseElement);
+
+            // If the chatbot response includes a prompt for news, fetch news
+            if (chatbot_response.includes('latest news')) {
+                getNews();
+            }
+        });
+    }
+
+    function getNews() {
+      const topic = prompt("What topic are you interested in?");
+      if (topic) {
+        // Get news based on user's topic preference
+        fetch('/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `user_input=${topic}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          const newsList = document.createElement('ul');
+          data.response.forEach(article => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+              <h3><a href="${article.link}">${article.title}</a></h3>
+              <p>${article.summary}</p>
+            `;
+            newsList.appendChild(listItem);
+          });
+          document.getElementById('news-container').appendChild(newsList);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
